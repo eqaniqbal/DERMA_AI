@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+<<<<<<< HEAD
+=======
+import 'screens/skin_scanner_screen.dart'; // add this import
+
+// inside routes:
+'/scan': (context) => const SkinScannerScreen(),
+
+>>>>>>> 8047f87d701ee5971590dcd95dcd533c797466f3
 import 'screens/home_screen.dart';
 import 'screens/skin_scanner_screen.dart';
 
