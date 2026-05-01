@@ -1,13 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-<<<<<<< HEAD
-=======
-import 'screens/skin_scanner_screen.dart'; // add this import
-
-// inside routes:
-'/scan': (context) => const SkinScannerScreen(),
-
->>>>>>> 8047f87d701ee5971590dcd95dcd533c797466f3
 import 'screens/home_screen.dart';
 import 'screens/skin_scanner_screen.dart';
 
@@ -33,7 +25,7 @@ class DermaAIApp extends StatelessWidget {
       theme: ThemeData(
         fontFamily: 'sans-serif',
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2ECC8F),
+          seedColor: const Color(0xFFE8836A),
           brightness: Brightness.light,
         ),
         useMaterial3: true,
