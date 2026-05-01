@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'chatbot_screen.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -299,16 +299,23 @@ class _HomeScreenState extends State<HomeScreen> {
             itemBuilder: (context, index) {
               final module = _filteredModules[index];
               return GestureDetector(
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                          '${module['title'].toString().replaceAll('\n', ' ')} — Coming Soon'),
-                      backgroundColor: const Color(0xFFE8836A),
-                      duration: const Duration(seconds: 1),
-                    ),
-                  );
-                },
+               onTap: () {
+  final title = module['title'].toString().replaceAll('\n', ' ');
+  if (title == 'AI First Aid Chatbot') {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ChatbotScreen()),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$title — Coming Soon'),
+        backgroundColor: const Color(0xFFE8836A),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+},
                 child: Container(
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFF5F0),

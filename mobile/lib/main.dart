@@ -2,6 +2,10 @@
 import 'package:flutter/material.dart';
 // ignore: uri_does_not_exist
 import 'package:flutter/services.dart';
+import 'screens/skin_scanner_screen.dart'; // add this import
+
+// inside routes:
+'/scan': (context) => const SkinScannerScreen(),
 
 import 'screens/home_screen.dart';
 
