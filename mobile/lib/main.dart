@@ -40,3 +40,4 @@ class DermaAIApp extends StatelessWidget {
     );
   }
 }
+//This is main dart
