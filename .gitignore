@@ -1,0 +1,34 @@
+# =========================
+# Python / AI Environment
+# =========================
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# =========================
+# AI Heavy Files
+# =========================
+ai/venv/
+ai/dataset/
+ai/model/*.keras
+ai/model/*.h5
+ai/model/*.tflite
+
+# =========================
+# Flutter / Web
+# =========================
+build/
+.dart_tool/
+.packages
+
+# =========================
+# VS Code (optional)
+# =========================
+.vscode/
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
