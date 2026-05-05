@@ -9,6 +9,9 @@ android {
     namespace = "com.dermaai.derma_ai"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
+      buildFeatures {
+        buildConfig = true
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

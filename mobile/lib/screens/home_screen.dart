@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'chatbot_screen.dart';
+import 'skin_scanner_screen.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -199,7 +201,30 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: GestureDetector(
-                          onTap: () {},
+                          onTap: () {
+                            final title = action['title'] as String;
+                            if (title == 'Scan Skin') {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => const SkinScannerScreen()),
+                              );
+                            } else if (title == 'AI Chatbot') {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => const ChatbotScreen()),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('$title — Coming Soon'),
+                                  backgroundColor: const Color(0xFFE8836A),
+                                  duration: const Duration(seconds: 1),
+                                ),
+                              );
+                            }
+                          },
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             decoration: BoxDecoration(
@@ -299,23 +324,31 @@ class _HomeScreenState extends State<HomeScreen> {
             itemBuilder: (context, index) {
               final module = _filteredModules[index];
               return GestureDetector(
-               onTap: () {
-  final title = module['title'].toString().replaceAll('\n', ' ');
-  if (title == 'AI First Aid Chatbot') {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const ChatbotScreen()),
-    );
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$title — Coming Soon'),
-        backgroundColor: const Color(0xFFE8836A),
-        duration: const Duration(seconds: 1),
-      ),
-    );
-  }
-},
+                onTap: () {
+                  final title =
+                      module['title'].toString().replaceAll('\n', ' ');
+                  if (title == 'AI First Aid Chatbot') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const ChatbotScreen()),
+                    );
+                  } else if (title == 'Skin Issue Scanner') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const SkinScannerScreen()),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('$title — Coming Soon'),
+                        backgroundColor: const Color(0xFFE8836A),
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                  }
+                },
                 child: Container(
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFF5F0),
@@ -382,7 +415,17 @@ class _HomeScreenState extends State<HomeScreen> {
         children: List.generate(items.length, (index) {
           final isSelected = _selectedIndex == index;
           return GestureDetector(
-            onTap: () => setState(() => _selectedIndex = index),
+            onTap: () {
+              if (index == 1) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const SkinScannerScreen()),
+                );
+              } else {
+                setState(() => _selectedIndex = index);
+              }
+            },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               padding:

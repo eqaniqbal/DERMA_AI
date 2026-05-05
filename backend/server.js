@@ -1,3 +1,6 @@
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -11,6 +14,9 @@ app.use(express.json());
 // Routes
 const chatbotRoutes = require('./src/routes/chatbot');
 app.use('/api/chatbot', chatbotRoutes);
+
+const scanRoutes = require('./src/routes/scan');
+app.use('/api/scan', scanRoutes);
 
 // Test route
 app.get('/', (req, res) => {

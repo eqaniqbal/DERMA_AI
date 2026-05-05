@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 
 class SkinScannerScreen extends StatefulWidget {
   const SkinScannerScreen({super.key});
@@ -13,8 +15,11 @@ class _SkinScannerScreenState extends State<SkinScannerScreen> {
   File? _selectedImage;
   final ImagePicker _picker = ImagePicker();
   bool _isAnalyzing = false;
+  Map<String, dynamic>? _result;
 
-  // ── Pick image from camera or gallery ──────────────────────────
+  // ── YOUR PC IP ADDRESS ──────────────────────────────────────────
+  static const String _baseUrl = 'http://192.168.18.96:5000/api/scan/analyze';
+
   Future<void> _pickImage(ImageSource source) async {
     final XFile? picked = await _picker.pickImage(
       source: source,
@@ -23,32 +28,50 @@ class _SkinScannerScreenState extends State<SkinScannerScreen> {
     if (picked != null) {
       setState(() {
         _selectedImage = File(picked.path);
+        _result = null;
       });
     }
   }
 
-  // ── Simulate analysis (we'll replace with real API later) ───────
- Future<void> _analyzeImage() async {
-  if (_selectedImage == null) return;
+  Future<void> _analyzeImage() async {
+    if (_selectedImage == null) return;
+    setState(() => _isAnalyzing = true);
 
-  setState(() => _isAnalyzing = true);
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse(_baseUrl));
+      request.fields['userId'] = 'guest';
+      request.files.add(
+        await http.MultipartFile.fromPath('image', _selectedImage!.path),
+      );
 
-  // Simulated delay — will be replaced by Flask API call
-  await Future.delayed(const Duration(seconds: 2));
+      var response = await request.send().timeout(
+        const Duration(seconds: 300),
+      );
+      var responseBody = await response.stream.bytesToString();
+      var data = jsonDecode(responseBody);
 
-  setState(() => _isAnalyzing = false);
+      if (response.statusCode == 200) {
+        setState(() => _result = data);
+      } else {
+        _showError(data['error'] ?? 'Analysis failed');
+      }
+    } catch (e) {
+      _showError('Connection failed: $e');
+    } finally {
+      setState(() => _isAnalyzing = false);
+    }
+  }
 
-  if (!mounted) return;
-
-  // Temporarily show a snackbar until results screen is ready
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('✅ Image selected! Results screen coming next.'),
-      backgroundColor: Color(0xFFE8836A),
-      duration: Duration(seconds: 2),
-    ),
-  );
-}
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +103,7 @@ class _SkinScannerScreenState extends State<SkinScannerScreen> {
         centerTitle: true,
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
@@ -89,8 +112,12 @@ class _SkinScannerScreenState extends State<SkinScannerScreen> {
               _buildImageArea(),
               const SizedBox(height: 24),
               _buildPickerButtons(),
-              const Spacer(),
+              const SizedBox(height: 24),
               _buildAnalyzeButton(),
+              if (_result != null) ...[
+                const SizedBox(height: 24),
+                _buildResultCard(),
+              ],
               const SizedBox(height: 16),
             ],
           ),
@@ -99,7 +126,6 @@ class _SkinScannerScreenState extends State<SkinScannerScreen> {
     );
   }
 
-  // ── Top info banner ─────────────────────────────────────────────
   Widget _buildInfoBanner() {
     return Container(
       padding: const EdgeInsets.all(14),
@@ -127,7 +153,6 @@ class _SkinScannerScreenState extends State<SkinScannerScreen> {
     );
   }
 
-  // ── Image preview area ──────────────────────────────────────────
   Widget _buildImageArea() {
     return GestureDetector(
       onTap: () => _showPickerOptions(),
@@ -155,10 +180,7 @@ class _SkinScannerScreenState extends State<SkinScannerScreen> {
         child: _selectedImage != null
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(18),
-                child: Image.file(
-                  _selectedImage!,
-                  fit: BoxFit.cover,
-                ),
+                child: Image.file(_selectedImage!, fit: BoxFit.cover),
               )
             : _buildEmptyImagePlaceholder(),
       ),
@@ -203,7 +225,6 @@ class _SkinScannerScreenState extends State<SkinScannerScreen> {
     );
   }
 
-  // ── Camera / Gallery buttons ────────────────────────────────────
   Widget _buildPickerButtons() {
     return Row(
       children: [
@@ -266,7 +287,6 @@ class _SkinScannerScreenState extends State<SkinScannerScreen> {
     );
   }
 
-  // ── Bottom sheet for pick options ───────────────────────────────
   void _showPickerOptions() {
     showModalBottomSheet(
       context: context,
@@ -326,7 +346,6 @@ class _SkinScannerScreenState extends State<SkinScannerScreen> {
     );
   }
 
-  // ── Analyze button ──────────────────────────────────────────────
   Widget _buildAnalyzeButton() {
     final bool canAnalyze = _selectedImage != null && !_isAnalyzing;
     return GestureDetector(
@@ -362,9 +381,7 @@ class _SkinScannerScreenState extends State<SkinScannerScreen> {
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
+                          color: Colors.white, strokeWidth: 2),
                     ),
                     SizedBox(width: 10),
                     Text('Analyzing...',
@@ -375,14 +392,187 @@ class _SkinScannerScreenState extends State<SkinScannerScreen> {
                   ],
                 )
               : Text(
-                  _selectedImage != null ? 'Analyze Skin' : 'Select an Image First',
+                  _selectedImage != null
+                      ? 'Analyze Skin'
+                      : 'Select an Image First',
                   style: TextStyle(
-                    color: canAnalyze ? Colors.white : const Color(0xFFE8836A),
+                    color:
+                        canAnalyze ? Colors.white : const Color(0xFFE8836A),
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildResultCard() {
+    final condition = _result!['condition'] ?? 'Unknown';
+    final confidence = (_result!['confidence'] ?? 0.0) as num;
+    final tip = _result!['tip'] ?? '';
+    final lowConfidence = _result!['lowConfidence'] ?? false;
+    final allScores =
+        _result!['allScores'] as Map<String, dynamic>? ?? {};
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF5C5B0)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFE8836A).withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5C5B0).withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.document_scanner_outlined,
+                    color: Color(0xFFE8836A), size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Detection Result',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                            color: Color(0xFF3D1F0F))),
+                    Text(condition,
+                        style: const TextStyle(
+                            color: Color(0xFFE8836A),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Confidence bar
+          Text(
+            'Confidence: ${confidence.toStringAsFixed(1)}%',
+            style: const TextStyle(
+                color: Color(0xFF3D1F0F),
+                fontWeight: FontWeight.w500,
+                fontSize: 13),
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: confidence / 100,
+              backgroundColor: const Color(0xFFF5C5B0),
+              color: confidence > 70
+                  ? Colors.green
+                  : confidence > 50
+                      ? Colors.orange
+                      : Colors.red,
+              minHeight: 10,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Low confidence warning
+          if (lowConfidence)
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+                border:
+                    Border.all(color: Colors.orange.withOpacity(0.4)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.warning_amber_outlined,
+                      color: Colors.orange, size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Low confidence. Please consult a dermatologist.',
+                      style:
+                          TextStyle(color: Colors.orange, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // Tip
+          if (tip.isNotEmpty && !lowConfidence) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8836A).withOpacity(0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.lightbulb_outline,
+                      color: Color(0xFFE8836A), size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(tip,
+                        style: TextStyle(
+                            color:
+                                const Color(0xFF3D1F0F).withOpacity(0.8),
+                            fontSize: 12,
+                            height: 1.4)),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // All scores
+          const Text('All Scores:',
+              style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF3D1F0F),
+                  fontSize: 13)),
+          const SizedBox(height: 8),
+          ...allScores.entries.map((e) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(e.key,
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: const Color(0xFF3D1F0F)
+                                  .withOpacity(0.7))),
+                    ),
+                    Text('${(e.value as num).toStringAsFixed(1)}%',
+                        style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFFE8836A))),
+                  ],
+                ),
+              )),
+        ],
       ),
     );
   }
