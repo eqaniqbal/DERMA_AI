@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import '../config.dart';
 
 class SkinScannerScreen extends StatefulWidget {
   const SkinScannerScreen({super.key});
@@ -18,7 +19,7 @@ class _SkinScannerScreenState extends State<SkinScannerScreen> {
   Map<String, dynamic>? _result;
 
   // ── YOUR PC IP ADDRESS ──────────────────────────────────────────
-  static const String _baseUrl = 'http://192.168.18.96:5000/api/scan/analyze';
+  String get _baseUrl => AppConfig.scanUrl;
 
   Future<void> _pickImage(ImageSource source) async {
     final XFile? picked = await _picker.pickImage(

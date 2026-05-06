@@ -23,6 +23,15 @@ app.get('/', (req, res) => {
   res.json({ message: 'Derma AI Backend is running!' });
 });
 
+// Discovery endpoint
+app.get('/discover', (req, res) => {
+  res.json({ 
+    service: 'derma-ai-backend',
+    version: '1.0.0',
+    status: 'running'
+  });
+});
+
 // Connect to MongoDB
 mongoose
   .connect(process.env.MONGODB_URI)
